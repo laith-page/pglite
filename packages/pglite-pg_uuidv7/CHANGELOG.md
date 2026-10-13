@@ -1,5 +1,12 @@
 # @electric-sql/pglite-pg_uuidv7
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [78012ca]
+  - @electric-sql/pglite@0.5.10
+
 ## 0.0.10
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @electric-sql/pglite-pg_repack
 
+## 0.0.2
+
+### Patch Changes
+
+- Updated dependencies [78012ca]
+  - @electric-sql/pglite@0.5.10
+
 ## 0.0.1
 
 ### Patch Changes
