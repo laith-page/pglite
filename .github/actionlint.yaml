@@ -1,0 +1,7 @@
+self-hosted-runner:
+  labels:
+    - blacksmith-32vcpu-ubuntu-2204
+    - blacksmith-4vcpu-ubuntu-2204
+    - nscloud-ubuntu-22.04-amd64-32x128
+    - nscloud-ubuntu-22.04-amd64-4x16
+    - nscloud-ubuntu-26.04-amd64-4x16
