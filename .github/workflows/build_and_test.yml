@@ -21,7 +21,7 @@ on:
 jobs:
   stylecheck:
     name: Stylecheck
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_PROVIDER == 'namespace' && 'nscloud-ubuntu-26.04-amd64-4x16' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -36,7 +36,7 @@ jobs:
 
   build-all:
     name: Install, build all and test as described in README
-    runs-on: blacksmith-32vcpu-ubuntu-2204
+    runs-on: ${{ vars.CI_PROVIDER == 'namespace' && 'nscloud-ubuntu-22.04-amd64-32x128' || 'blacksmith-32vcpu-ubuntu-2204' }}
     env:
       BUILD_CONFIG_FILE: postgres-pglite/.buildconfig
       TZ: UTC
@@ -242,7 +242,7 @@ jobs:
 
   build-and-test-pglite:
     name: Build and Test packages/pglite
-    runs-on: blacksmith-32vcpu-ubuntu-2204
+    runs-on: ${{ vars.CI_PROVIDER == 'namespace' && 'nscloud-ubuntu-22.04-amd64-32x128' || 'blacksmith-32vcpu-ubuntu-2204' }}
     strategy:
       matrix:
         node: [20.x, 21.x, 22.x, 23.x, 24.x]
@@ -307,7 +307,7 @@ jobs:
         env:
           TEST_TIMEOUT: 180000
         run: |
-          pnpm test:web || pnpm test:web || pnpm test:web
+          pnpm test:web
 
       - name: Test Deno
         run: pnpm test:deno
@@ -363,7 +363,7 @@ jobs:
 
   build-and-test-pglite-dependents:
     name: Build and Test packages dependent on PGlite
-    runs-on: blacksmith-32vcpu-ubuntu-2204
+    runs-on: ${{ vars.CI_PROVIDER == 'namespace' && 'nscloud-ubuntu-22.04-amd64-32x128' || 'blacksmith-32vcpu-ubuntu-2204' }}
     strategy:
       matrix:
         node: [20.x, 21.x, 22.x, 23.x, 24.x]    
@@ -597,7 +597,7 @@ jobs:
 
   publish-website-with-demos:
     name: Publish website with demos
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ${{ vars.CI_PROVIDER == 'namespace' && 'nscloud-ubuntu-22.04-amd64-4x16' || 'blacksmith-4vcpu-ubuntu-2204' }}
     needs: [build-and-test-pglite, build-and-test-pglite-dependents]
     steps:
       - name: Checkout
@@ -803,7 +803,7 @@ jobs:
       issues: write # to post issue comments (changesets/action)
       pull-requests: write # to create pull request (changesets/action)
     name: Make a PR or publish
-    runs-on: ubuntu-22.04
+    runs-on: ${{ vars.CI_PROVIDER == 'namespace' && 'nscloud-ubuntu-22.04-amd64-4x16' || 'ubuntu-22.04' }}
     needs: [build-all]
     steps:
       - uses: actions/checkout@v5
