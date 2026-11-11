@@ -1,5 +1,8 @@
 name: Build and test PGlite packages
 
+env:
+  CI_PROVIDER: l3
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -21,7 +24,7 @@ on:
 jobs:
   stylecheck:
     name: Stylecheck
-    runs-on: ubuntu-latest
+    runs-on: l3-ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -36,7 +39,7 @@ jobs:
 
   build-all:
     name: Install, build all and test as described in README
-    runs-on: blacksmith-32vcpu-ubuntu-2204
+    runs-on: l3-ubuntu-26.04-32core
     env:
       BUILD_CONFIG_FILE: postgres-pglite/.buildconfig
       TZ: UTC
@@ -242,7 +245,7 @@ jobs:
 
   build-and-test-pglite:
     name: Build and Test packages/pglite
-    runs-on: blacksmith-32vcpu-ubuntu-2204
+    runs-on: l3-ubuntu-26.04-32core
     strategy:
       matrix:
         node: [20.x, 21.x, 22.x, 23.x, 24.x]
@@ -363,7 +366,7 @@ jobs:
 
   build-and-test-pglite-dependents:
     name: Build and Test packages dependent on PGlite
-    runs-on: blacksmith-32vcpu-ubuntu-2204
+    runs-on: l3-ubuntu-26.04-32core
     strategy:
       matrix:
         node: [20.x, 21.x, 22.x, 23.x, 24.x]    
@@ -597,7 +600,7 @@ jobs:
 
   publish-website-with-demos:
     name: Publish website with demos
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: l3-ubuntu-26.04
     needs: [build-and-test-pglite, build-and-test-pglite-dependents]
     steps:
       - name: Checkout
@@ -743,8 +746,8 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
             mkdir -p /tmp/web/examples/ /tmp/web/dist /tmp/web/benchmark
-            cp -r ${PGLITE}/dist/* /tmp/web/dist/
-            cp -r ${PGLITE}/examples/* /tmp/web/examples/
+            cp -r "${PGLITE}"/dist/* /tmp/web/dist/
+            cp -r "${PGLITE}"/examples/* /tmp/web/examples/
             cp -r ${{ github.workspace }}/packages/benchmark/dist/* /tmp/web/benchmark/
             rm -rf /tmp/web/examples/pglite-tools
             cp -r /tmp/pglite-tools /tmp/web/examples/
@@ -784,6 +787,7 @@ jobs:
           edit-mode: append
 
       - name: Deploy website to Netlify
+        if: github.repository == 'electric-sql/pglite'
         uses: nwtgck/actions-netlify@v4.0
         with:
           publish-dir: '/tmp/web'
@@ -796,14 +800,14 @@ jobs:
         timeout-minutes: 1
 
   changesets-release:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.repository == 'electric-sql/pglite'
     permissions:
       id-token: write # Required for npm trusted publishing (OIDC)
       contents: write # to create release (changesets/action)
       issues: write # to post issue comments (changesets/action)
       pull-requests: write # to create pull request (changesets/action)
     name: Make a PR or publish
-    runs-on: ubuntu-22.04
+    runs-on: l3-ubuntu-26.04
     needs: [build-all]
     steps:
       - uses: actions/checkout@v5
@@ -920,3 +924,28 @@ jobs:
           title: 'chore: publish new package versions'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  workflow-check:
+    name: Validate workflows
+    runs-on: l3-ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
+      - run: mise run check
+
+  check:
+    name: Check
+    if: always()
+    runs-on: l3-ubuntu-26.04
+    needs: [workflow-check, stylecheck, build-all, build-and-test-pglite, build-and-test-pglite-dependents, publish-website-with-demos]
+    steps:
+      - name: Require every validation, build and test job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "Required job result: $result" >&2
+              exit 1
+            fi
+          done
